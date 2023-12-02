@@ -14,10 +14,10 @@ ext {
   junitVersion = '5.9.2'
 }
 
-sourceCompatibility = '11'
-targetCompatibility = '11'
+sourceCompatibility = "16"
+targetCompatibility = "16"
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
   options.encoding = 'UTF-8'
 }
 
@@ -28,6 +28,9 @@ dependencies {
 
   testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+
+  implementation('org.postgresql:postgresql:42.6.0')
+  implementation('javax.persistence:javax.persistence-api:2.2')
 }
 
 test {
