@@ -4,6 +4,13 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
              version="3.0">
   <persistence-unit name="default">
+    <class>com.example.weblab4backend.beans.AreaCheckerBean</class>
+    <properties>
+      <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/studs"/>
+      <property name="javax.persistence.jdbc.user" value="s368311"/>
+      <property name="javax.persistence.jdbc.password" value="cvyPME6q769KBBWn"/>
 
+      <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+    </properties>
   </persistence-unit>
 </persistence>
