@@ -15,7 +15,7 @@ import java.util.List;
 
 public class CheckAreaDAOImpl implements CheckAreaDAO {
     private static final String PERSISTENCE_UNIT_NAME = "default";
-    private EntityManagerFactory emf;
+    private final EntityManagerFactory emf;
 
     public CheckAreaDAOImpl() {
         emf = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
@@ -108,6 +108,30 @@ public class CheckAreaDAOImpl implements CheckAreaDAO {
     }
 
     @Override
+    public Collection<AreaCheckerBean> getUserResults(int ownerid) throws SQLException {
+        EntityManager em = emf.createEntityManager();
+        List<AreaCheckerBean> results;
+
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<AreaCheckerBean> criteriaQuery = cb.createQuery(AreaCheckerBean.class);
+            Root<AreaCheckerBean> root = criteriaQuery.from(AreaCheckerBean.class);
+
+            results = em.createQuery(criteriaQuery.select(root).where(
+                    cb.equal(root.get("ownerid"), ownerid)
+            )).getResultList();
+        } catch (Exception e) {
+            System.err.println("DAO error occurred: " + e);
+            throw new SQLException(e);
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return results;
+    }
+
+    @Override
     public Collection<AreaCheckerBean> getSortedResults(String field, String operator, double value) throws SQLException {
         EntityManager em = emf.createEntityManager();
         List<AreaCheckerBean> results;
@@ -175,6 +199,30 @@ public class CheckAreaDAOImpl implements CheckAreaDAO {
             transaction = em.getTransaction();
             transaction.begin();
             String jpql = "DELETE FROM AreaCheckerBean a";
+            em.createQuery(jpql).executeUpdate();
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            System.err.println("DAO error occurred: " + e);
+            throw new SQLException(e);
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+    }
+
+    @Override
+    public void clearUserResults(int owner_id) throws SQLException {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction transaction = null;
+
+        try {
+            transaction = em.getTransaction();
+            transaction.begin();
+            String jpql = "DELETE FROM AreaCheckerBean a WHERE a.ownerid = " + owner_id;
             em.createQuery(jpql).executeUpdate();
             transaction.commit();
         } catch (Exception e) {

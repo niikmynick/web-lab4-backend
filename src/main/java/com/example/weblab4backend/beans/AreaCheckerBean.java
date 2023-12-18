@@ -1,16 +1,14 @@
 package com.example.weblab4backend.beans;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
 import jakarta.persistence.*;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 
 @Entity
 @Table(name = "result", schema = "s368311")
-public class AreaCheckerBean {
+public class AreaCheckerBean implements Serializable {
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +25,8 @@ public class AreaCheckerBean {
     private String requestTime;
     @Column(name = "scriptTime")
     private long scriptTime;
+    @Column(name = "ownerid")
+    private int ownerid;
 
     public AreaCheckerBean() {
         super();
@@ -97,6 +97,15 @@ public class AreaCheckerBean {
         this.id = id;
     }
 
+    @Column(name = "ownerid")
+    public int getOwnerid() {
+        return ownerid;
+    }
+
+    public void setOwnerid(int ownerid) {
+        this.ownerid = ownerid;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -125,20 +134,8 @@ public class AreaCheckerBean {
                 ", status=" + status +
                 ", requestTime=" + requestTime +
                 ", scriptTime=" + scriptTime +
+                ", ownerId=" + ownerid +
                 '}';
     }
 
-    public JsonArray toJsonArray() {
-        JsonArrayBuilder builder = Json.createArrayBuilder();
-        builder.add(Json.createObjectBuilder()
-                .add("id", getId())
-                .add("x", getX())
-                .add("y", getY())
-                .add("r", getR())
-                .add("status", getStatus())
-                .add("requestTime", getRequestTime())
-                .add("scriptTime", getScriptTime())
-        );
-        return builder.build();
-    }
 }

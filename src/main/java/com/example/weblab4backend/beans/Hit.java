@@ -66,7 +66,7 @@ public class Hit implements java.io.Serializable {
         this.r = r;
     }
 
-    public void setStatus(boolean status) { this.status = status; };
+    public void setStatus(boolean status) { this.status = status; }
 
     public void setRequestTime(String requestTime) {
         this.requestTime = requestTime;

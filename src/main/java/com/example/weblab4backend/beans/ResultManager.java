@@ -2,42 +2,42 @@ package com.example.weblab4backend.beans;
 
 import com.example.weblab4backend.dbUtils.DAOFactory;
 import com.example.weblab4backend.utils.AreaChecker;
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.stream.Stream;
 
 @Path("/data")
 public class ResultManager {
     private LinkedList<AreaCheckerBean> results = new LinkedList<>();
 
-    public ResultManager() {
-        try {
-            results = new LinkedList<>(DAOFactory.getInstance().getResultDAO().getAllResults());
-        } catch (SQLException ex) {
-            System.err.println("Something went wrong when trying add new result to DB: " + ex);
-        }
-    }
-
     public LinkedList<AreaCheckerBean> getResults() {
         return results;
     }
 
-    @GET
+    @POST
     @Path("/get")
-    public JsonArray getStringResults() {
-        System.out.println("getResults");
+    @Produces("application/json")
+    public Response getStringResults(@QueryParam("owner_id") int owner_id) {
 
-        JsonArrayBuilder builder = Json.createArrayBuilder();
-        results.forEach(result -> builder.add(result.toJsonArray()));
-        return builder.build();
+        System.out.println("Get results for user with id = " + owner_id);
+
+        try {
+            results = new LinkedList<>(DAOFactory.getInstance().getResultDAO().getUserResults(owner_id));
+
+            return Response.ok(results).build();
+
+        } catch (SQLException ex) {
+            System.err.println("Something went wrong when trying to get result to DB: " + ex);
+            return Response.status(503).build();
+        }
     }
 
     public void setResults(LinkedList<AreaCheckerBean> results) {
@@ -47,8 +47,10 @@ public class ResultManager {
     @Transactional
     @POST
     @Path("/add")
-    public JsonArray addResults(@QueryParam("x") double x, @QueryParam("y") double y, @QueryParam("r") double r) {
-        System.out.println("addResults");
+    @Produces("application/json")
+    public Response addResults(@QueryParam("x") double x, @QueryParam("y") double y, @QueryParam("r") double r, @QueryParam("owner_id") int owner_id) {
+
+        System.out.println("Add results for user with id = " + owner_id);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
         String requestTime = dateFormat.format(new Date(System.currentTimeMillis()));
@@ -58,17 +60,24 @@ public class ResultManager {
 
         AreaCheckerBean currentResult = new AreaCheckerBean();
 
-        operateHit(requestTime, startTime, currentResult, hit);
+        try {
+            results = new LinkedList<>(DAOFactory.getInstance().getResultDAO().getUserResults(owner_id));
+            operateHit(requestTime, startTime, currentResult, hit, owner_id);
 
-        JsonArrayBuilder builder = Json.createArrayBuilder();
-        results.forEach(result -> builder.add(result.toJsonArray()));
-        return builder.build();
+            return Response.ok(currentResult).build();
+
+        } catch (SQLException ex) {
+            System.err.println("Something went wrong when trying to get result to DB: " + ex);
+            return Response.status(503).build();
+        }
     }
 
-    private void operateHit(String requestTime, long startTime, AreaCheckerBean currentResult, Hit hit) {
+    private void operateHit(String requestTime, long startTime, AreaCheckerBean currentResult, Hit hit, int owner_id) {
         currentResult.setX( hit.getX() );
         currentResult.setY( hit.getY() );
         currentResult.setR( hit.getR() );
+
+        currentResult.setOwnerid(owner_id);
 
         currentResult.setStatus( AreaChecker.isHit(hit.getX(), hit.getY(), hit.getR()) );
 
@@ -76,30 +85,50 @@ public class ResultManager {
         currentResult.setScriptTime( System.nanoTime() - startTime );
 
         System.out.println(currentResult);
+
         try {
             DAOFactory.getInstance().getResultDAO().addNewResult( currentResult );
+            results.addFirst( currentResult );
+
         } catch (SQLException ex) {
             System.err.println("Something went wrong when trying add new result to DB: " + ex);
         }
-
-        results.addFirst( currentResult );
     }
 
+//    @Transactional
+//    @POST
+//    @Path("/clear")
+//    public JsonArray clearResults() {
+//        System.out.println("clearResults");
+//        results.clear();
+//        try {
+//            DAOFactory.getInstance().getResultDAO().clearResults();
+//        } catch (SQLException ex) {
+//            System.err.println("Something went wrong when trying to add new result to DB: " + ex);
+//        }
+//
+//        JsonArrayBuilder builder = Json.createArrayBuilder();
+//        results.forEach(result -> builder.add(result.toJsonArray()));
+//        return builder.build();
+//    }
+
     @Transactional
-    @DELETE
+    @POST
     @Path("/clear")
-    public JsonArray clearResults() {
-        System.out.println("clearResults");
-        results.clear();
+    public Response clearUserResults(@QueryParam("owner_id") int owner_id) {
+
+        System.out.println("Clear results for user with id = " + owner_id);
+
         try {
-            DAOFactory.getInstance().getResultDAO().clearResults();
+            DAOFactory.getInstance().getResultDAO().clearUserResults(owner_id);
+            results.clear();
+
+            return Response.ok().build();
+
         } catch (SQLException ex) {
             System.err.println("Something went wrong when trying add new result to DB: " + ex);
+            return Response.status(503).build();
         }
-
-        JsonArrayBuilder builder = Json.createArrayBuilder();
-        results.forEach(result -> builder.add(result.toJsonArray()));
-        return builder.build();
     }
 
 }
